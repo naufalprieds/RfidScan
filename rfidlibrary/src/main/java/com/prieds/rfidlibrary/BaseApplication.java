@@ -1,5 +1,6 @@
 package com.prieds.rfidlibrary;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -28,12 +29,18 @@ import com.handheld.uhfr.UHFRManager;
 import com.nlscan.android.uhf.TagInfo;
 import com.nlscan.android.uhf.UHFManager;
 import com.nlscan.android.uhf.UHFReader;
+import com.prieds.rfidlibrary.bluetooth.DateUtils;
+import com.prieds.rfidlibrary.bluetooth.FileUtils;
+import com.prieds.rfidlibrary.bluetooth.SPUtils;
+import com.prieds.rfidlibrary.model.EpcEventbus;
 import com.prieds.rfidlibrary.model.UhfTagInfoCustom;
 import com.rscja.deviceapi.RFIDWithUHFBLE;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
 import com.rscja.deviceapi.interfaces.ConnectionStatus;
 import com.rscja.deviceapi.interfaces.ConnectionStatusCallback;
 import com.uhf.api.cls.Reader;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -52,6 +59,11 @@ public class BaseApplication {
 
     public BluetoothAdapter mBtAdapter = null;
     public RFIDWithUHFBLE uhf = RFIDWithUHFBLE.getInstance();
+    public boolean isScanning = false;
+    public String remoteBTName = "";
+    public String remoteBTAdd = "";
+    Toast toast;
+
     BTStatus btStatus = new BTStatus();
     public static final String SHOW_HISTORY_CONNECTED_LIST = "showHistoryConnectedList";
     public static final String TAG_DATA = "tagData";
@@ -129,15 +141,16 @@ public class BaseApplication {
 
     private long exittime;
 
-    private String TAG = "LIB_EXAMPLE_ANDROID"
-    void i(String message){
-        Log.i(TAG, message);
+    Activity activity;
+
+    void init(Activity activity){
+        this.activity = activity;
     }
 
     class BTStatus implements ConnectionStatusCallback<Object> {
         @Override
         public void getStatus(final ConnectionStatus connectionStatus, final Object device1) {
-            runOnUiThread(new Runnable() {
+            activity.runOnUiThread(new Runnable() {
                 public void run() {
                     BluetoothDevice device = (BluetoothDevice) device1;
                     remoteBTName = "";
@@ -148,10 +161,10 @@ public class BaseApplication {
 
                         tvAddress.setText(String.format("%s(%s)\nconnected", remoteBTName, remoteBTAdd));
                         if (shouldShowDisconnected()) {
-                            showToast(R.string.connect_success);
+                            showToast(activity.getResources().getString(R.string.connect_success));
                         }
 
-                        timeCountCur = SPUtils.getInstance(getApplicationContext()).getSPLong(SPUtils.DISCONNECT_TIME, 0);
+                        timeCountCur = SPUtils.getInstance(activity).getSPLong(SPUtils.DISCONNECT_TIME, 0);
                         if (timeCountCur > 0) {
                             startDisconnectTimer(timeCountCur);
                         } else {
@@ -179,9 +192,9 @@ public class BaseApplication {
                             tvAddress.setText("disconnected");
                         }
                         if (shouldShowDisconnected())
-                            showToast(R.string.disconnect);
+                            showToast(activity.getResources().getString(R.string.disconnect));
 
-                        boolean reconnect = SPUtils.getInstance(getApplicationContext()).getSPBoolean(SPUtils.AUTO_RECONNECT, false);
+                        boolean reconnect = SPUtils.getInstance(activity).getSPBoolean(SPUtils.AUTO_RECONNECT, false);
                         if (mDevice != null && reconnect) {
                             reConnect(mDevice.getAddress()); // 重连
                         }
@@ -226,7 +239,7 @@ public class BaseApplication {
     }
 
     public void resetDisconnectTime() {
-        timeCountCur = SPUtils.getInstance(getApplicationContext()).getSPLong(SPUtils.DISCONNECT_TIME, 0);
+        timeCountCur = SPUtils.getInstance(activity).getSPLong(SPUtils.DISCONNECT_TIME, 0);
         if (timeCountCur > 0) {
             formatConnectButton(timeCountCur);
         }
@@ -437,7 +450,7 @@ public class BaseApplication {
                 if(list==null || list.size()==0){
                     SystemClock.sleep(1);
                 }else{
-                    Utils.playSound(1);
+//                    Utils.playSound(1);
                     EventBus.getDefault().post(new EpcEventbus("", "not-embed", FLAG_UHFINFO_LIST, list));
                 }
                 if(System.currentTimeMillis()-startTime>100){
@@ -450,7 +463,7 @@ public class BaseApplication {
         }
     }
 
-    private synchronized   List<UHFTAGInfo> getUHFInfo() {
+    private synchronized List<UHFTAGInfo> getUHFInfo() {
         List<UHFTAGInfo> list = uhf.readTagFromBufferList();
         return list;
     }
@@ -468,39 +481,9 @@ public class BaseApplication {
         for(int k=0;k<list.size();k++){
             UHFTAGInfo uhftagInfo=list.get(k);
 
-            if (adapter.getDataOriginal().size() < 1){
-//                adapter.add(new UhfTagInfoCustom(uhftagInfo.getEPC()));
-
-                for (int i = 0; i < cartItem.getAttributeList().size(); i++) {
-                    if (cartItem.getAttributeList().get(i).getK().equalsIgnoreCase("STD_REPACKING")){
-                        uhfTagInfoCustoms.add(new UhfTagInfoCustom(uhftagInfo.getEPC(), Float.parseFloat(cartItem.getAttributeList().get(i).getV()), 0));
-                        break;
-                    }
-                }
-                adapter.setData(uhfTagInfoCustoms);
-                adapter.notifyDataSetChanged();
-
-            }else{
-                for (int i = 0; i < adapter.getDataOriginal().size(); i++) {
-                    if (uhftagInfo.getEPC().equalsIgnoreCase(adapter.getDataOriginal().get(i).getEpc())){
-                        found = true;
-                    }
-                }
-                if (!found){
-                    for (int i = 0; i < cartItem.getAttributeList().size(); i++) {
-                        if (cartItem.getAttributeList().get(i).getK().equalsIgnoreCase("STD_REPACKING")){
-                            adapter.add(new UhfTagInfoCustom(uhftagInfo.getEPC(), Float.parseFloat(cartItem.getAttributeList().get(i).getV()), 0));
-                            break;
-                        }
-                    }
-                }
-            }
-            Utils.playSound(1);
-            binding.txtFulffilled.setText(adapter.getTotalQty((ArrayList<UhfTagInfoCustom>) adapter.getDataOriginal())+"");
-            binding.txtScan.setText(adapter.getItemCount()+"");
+            showToast(uhftagInfo.getEPC());
 
         }
-        adapter.notifyDataSetChanged();
     }
     private StringBuilder stringBuilder = new StringBuilder();
     /**
@@ -512,33 +495,8 @@ public class BaseApplication {
         List<UhfTagInfoCustom> uhfTagInfoCustoms = new ArrayList<>();
         boolean found = false;
 
-        if (adapter.getDataOriginal().size() < 1){
-            for (int i = 0; i < cartItem.getAttributeList().size(); i++) {
-                if (cartItem.getAttributeList().get(i).getK().equalsIgnoreCase("STD_REPACKING")){
-                    uhfTagInfoCustoms.add(new UhfTagInfoCustom(uhftagInfo.getEPC(), Float.parseFloat(cartItem.getAttributeList().get(i).getV()), 0));
-                    break;
-                }
-            }
-            adapter.setData(uhfTagInfoCustoms);
-            adapter.notifyDataSetChanged();
-        }else{
-            for (int i = 0; i < adapter.getDataOriginal().size(); i++) {
-                if (uhftagInfo.getEPC().equalsIgnoreCase(adapter.getDataOriginal().get(i).getEpc())){
-                    found = true;
-                }
-            }
-            if (!found){
-                for (int i = 0; i < cartItem.getAttributeList().size(); i++) {
-                    if (cartItem.getAttributeList().get(i).getK().equalsIgnoreCase("STD_REPACKING")){
-                        adapter.add(new UhfTagInfoCustom(uhftagInfo.getEPC(), Float.parseFloat(cartItem.getAttributeList().get(i).getV()), 0));
-                        break;
-                    }
-                }
-            }
-        }
-        Utils.playSound(1);
-        binding.txtFulffilled.setText(adapter.getTotalQty((ArrayList<UhfTagInfoCustom>) adapter.getDataOriginal())+"");
-        binding.txtScan.setText(adapter.getItemCount()+"");
+        showToast(uhftagInfo.getEPC());
+
     }
 
     /**
@@ -700,7 +658,8 @@ public class BaseApplication {
             switch (msg.what) {
                 case MSG_FIND_ASSET:
                     Bundle bundle = msg.getData();
-                    getNewData(bundle.getString("rfid"));
+                    showToast(bundle.getString("rfid"));
+//                    getNewData(bundle.getString("rfid"));
                     break;
                 case MSG_NOT_FIND_ASSET:
                     break;
@@ -752,27 +711,27 @@ public class BaseApplication {
         public void handleMessage(Message msg) {
         }//end
     }//end
-
-    @Override
-    protected void uhfPowerOning() {
-        super.uhfPowerOning();
-    }
-
-    @Override
-    protected void uhfPowerOn() {
-        super.uhfPowerOn();
-        showToast("Device Power On");
-//        btn_start_read.setEnabled(mUHFMgr.isPowerOn());
-//        btn_stop_read.setEnabled(mUHFMgr.isPowerOn());
-    }
-
-    @Override
-    protected void uhfPowerOff() {
-        super.uhfPowerOff();
-        showToast("Device Power Off");
-//        btn_start_read.setEnabled(false);
-//        btn_stop_read.setEnabled(false);
-    }
+//
+//    @Override
+//    protected void uhfPowerOning() {
+//        super.uhfPowerOning();
+//    }
+//
+//    @Override
+//    protected void uhfPowerOn() {
+//        super.uhfPowerOn();
+//        showToast("Device Power On");
+////        btn_start_read.setEnabled(mUHFMgr.isPowerOn());
+////        btn_stop_read.setEnabled(mUHFMgr.isPowerOn());
+//    }
+//
+//    @Override
+//    protected void uhfPowerOff() {
+//        super.uhfPowerOff();
+//        showToast("Device Power Off");
+////        btn_start_read.setEnabled(false);
+////        btn_stop_read.setEnabled(false);
+//    }
 
     PowerManager.WakeLock wl;
     private void keepScreen()
@@ -790,7 +749,7 @@ public class BaseApplication {
 //                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
 //                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     private void releseScreenLock()
@@ -804,7 +763,7 @@ public class BaseApplication {
     		wl = null;
     	}*/
 
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
 
@@ -812,7 +771,7 @@ public class BaseApplication {
     {
         try {
             IntentFilter iFilter = new IntentFilter("nlscan.intent.action.uhf.ACTION_RESULT");
-            registerReceiver(mResultReceiver, iFilter);
+            activity.registerReceiver(mResultReceiver, iFilter);
         } catch (Exception e) {
         }
 
@@ -821,7 +780,7 @@ public class BaseApplication {
     private void unRegisterResultReceiver()
     {
         try {
-            unregisterReceiver(mResultReceiver);
+            activity.unregisterReceiver(mResultReceiver);
         } catch (Exception e) {
         }
 
@@ -834,7 +793,7 @@ public class BaseApplication {
     {
         UHFReader.READER_STATE er = UHFReader.READER_STATE.CMD_FAILED_ERR;
         er = mUHFMgr.powerOn();
-        Toast.makeText(getApplicationContext(), "Power on :"+er.toString(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(activity, "Power on :"+er.toString(), Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -844,7 +803,7 @@ public class BaseApplication {
     {
         UHFReader.READER_STATE er = UHFReader.READER_STATE.CMD_FAILED_ERR;
         er = mUHFMgr.powerOff();
-        Toast.makeText(getApplicationContext(), "Power off :"+er.toString(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(activity, "Power off :"+er.toString(), Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -857,7 +816,7 @@ public class BaseApplication {
         if(er == UHFReader.READER_STATE.OK_ERR)
             keepScreen();
         else
-            Toast.makeText(getApplicationContext(), "Start reading :"+er.toString(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(activity, "Start reading :"+er.toString(), Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -869,31 +828,46 @@ public class BaseApplication {
         er = mUHFMgr.stopTagInventory();
         releseScreenLock();
         return er;
-        //Toast.makeText(getApplicationContext(), "Stop reading :"+er.toString(), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(activity, "Stop reading :"+er.toString(), Toast.LENGTH_SHORT).show();
+    }
+
+    public void connect(String deviceAddress) {
+        if (uhf.getConnectStatus() == ConnectionStatus.CONNECTING) {
+            showToast(activity.getResources().getString(R.string.connecting));
+        } else {
+            uhf.connect(deviceAddress, btStatus);
+        }
+    }
+
+    public void disconnect(boolean isActiveDisconnect) {
+        cancelDisconnectTimer();
+        mIsActiveDisconnect = isActiveDisconnect; // 主动断开为true
+        uhf.disconnect();
+    }
+
+    private void reConnect(String deviceAddress) {
+        if (!mIsActiveDisconnect && mReConnectCount > 0) {
+            connect(deviceAddress);
+            mReConnectCount--;
+        }
+    }
+
+    /**
+     * 应该提示未连接状态
+     *
+     * @return
+     */
+    private boolean shouldShowDisconnected() {
+        return mIsActiveDisconnect || mReConnectCount == 0;
     }
 
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN)
-        {
-            if ((System.currentTimeMillis() - exittime) > 2000) {
-                Toast.makeText(getApplicationContext(), "Press Again to Exit", Toast.LENGTH_SHORT).show();
-                exittime = System.currentTimeMillis();
-            }else
-                return super.onKeyDown(keyCode, event);
-        }
 
-        AudioManager audioManager  = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_VOLUME_UP:
-                audioManager.adjustStreamVolume(AudioManager.STREAM_RING, AudioManager.ADJUST_RAISE,AudioManager.FX_FOCUS_NAVIGATION_UP);
-                return true;
-            case KeyEvent.KEYCODE_VOLUME_DOWN:
-                audioManager.adjustStreamVolume(AudioManager.STREAM_RING, AudioManager.ADJUST_LOWER,AudioManager.FX_FOCUS_NAVIGATION_UP);
-                return true;
+    public void showToast(String text) {
+        if (toast != null) {
+            toast.cancel();
         }
-
-        return true;
+        toast = Toast.makeText(activity, text, Toast.LENGTH_SHORT);
+        toast.show();
     }
 }
