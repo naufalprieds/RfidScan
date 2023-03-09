@@ -1,13 +1,17 @@
 package com.prieds.rfidlibrary;
 
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -17,6 +21,7 @@ import android.os.Message;
 import android.os.Parcelable;
 import android.os.PowerManager;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -34,6 +39,7 @@ import com.prieds.rfidlibrary.bluetooth.FileUtils;
 import com.prieds.rfidlibrary.bluetooth.SPUtils;
 import com.prieds.rfidlibrary.model.EpcEventbus;
 import com.prieds.rfidlibrary.model.UhfTagInfoCustom;
+import com.prieds.rfidlibrary.utils.Utils;
 import com.rscja.deviceapi.RFIDWithUHFBLE;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
 import com.rscja.deviceapi.interfaces.ConnectionStatus;
@@ -145,7 +151,66 @@ public final class BaseApplication {
 
     public static void init(Activity mactivity){
         activity = mactivity;
+        if (uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
+            disconnect(true);
+        }
+        uhf.init(mactivity);
+        initRfid();
+        checkLocationEnable();
+        Utils.initSound(mactivity);
+
     }
+
+    private static void initRfid() {
+        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        uhf.setKeyEventCallback(keycode -> {
+            Toast.makeText(BaseApplication.activity, "  keycode =" + keycode + "   ,isExit=" + isExit, Toast.LENGTH_LONG).show();
+            Log.d(TAG, "  keycode =" + keycode + "   ,isExit=" + isExit);
+            if (!isExit && uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
+                if (loopFlag) {
+                    stopInventory();
+                } else {
+                    startThread();
+                }
+            }
+        });
+    }
+
+    private static void checkLocationEnable() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                activity.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, ACCESS_FINE_LOCATION_PERMISSION_REQUEST);
+            }
+        }
+        if (!isLocationEnabled()) {
+            Utils.alert(BaseApplication.activity, R.string.get_location_permission, activity.getString(R.string.tips_open_the_ocation_permission), R.drawable.webtext, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    activity.startActivityForResult(intent, REQUEST_ACTION_LOCATION_SETTINGS);
+                }
+            });
+        }
+    }
+
+    private static boolean isLocationEnabled() {
+        int locationMode = 0;
+        String locationProviders;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            try {
+                locationMode = Settings.Secure.getInt(activity.getContentResolver(), Settings.Secure.LOCATION_MODE);
+            } catch (Settings.SettingNotFoundException e) {
+                e.printStackTrace();
+                return false;
+            }
+            return locationMode != Settings.Secure.LOCATION_MODE_OFF;
+        } else {
+            locationProviders = Settings.Secure.getString(activity.getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
+            return !TextUtils.isEmpty(locationProviders);
+        }
+    }
+
 
     public static class BTStatus implements ConnectionStatusCallback<Object> {
         @Override
