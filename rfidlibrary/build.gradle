@@ -32,7 +32,6 @@ dependencies {
     implementation files('libs/nlscan_sdk_master_user_v2.6.1.jar')
 
     implementation 'androidx.appcompat:appcompat:1.6.0'
-    implementation 'com.google.android.material:material:1.7.0'
     implementation("org.greenrobot:eventbus:3.3.1")
 
     testImplementation 'junit:junit:4.13.2'

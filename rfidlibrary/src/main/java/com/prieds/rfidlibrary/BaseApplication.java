@@ -51,20 +51,20 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class BaseApplication {
+public final class BaseApplication {
     private static final int REQUEST_ENABLE_BT = 2;
     private static final int REQUEST_SELECT_DEVICE = 1;
 
-    public BluetoothDevice mDevice = null;
+    public static BluetoothDevice mDevice = null;
 
-    public BluetoothAdapter mBtAdapter = null;
-    public RFIDWithUHFBLE uhf = RFIDWithUHFBLE.getInstance();
-    public boolean isScanning = false;
-    public String remoteBTName = "";
-    public String remoteBTAdd = "";
-    Toast toast;
+    public static BluetoothAdapter mBtAdapter = null;
+    public static RFIDWithUHFBLE uhf = RFIDWithUHFBLE.getInstance();
+    public static boolean isScanning = false;
+    public static String remoteBTName = "";
+    public static String remoteBTAdd = "";
+    public static Toast toast;
 
-    BTStatus btStatus = new BTStatus();
+    public static BTStatus btStatus = new BTStatus();
     public static final String SHOW_HISTORY_CONNECTED_LIST = "showHistoryConnectedList";
     public static final String TAG_DATA = "tagData";
     public static final String TAG_EPC = "tagEpc";
@@ -73,49 +73,49 @@ public class BaseApplication {
     public static final String TAG_COUNT = "tagCount";
     public static final String TAG_RSSI = "tagRssi";
 
-    private boolean mIsActiveDisconnect = true; // 是否主动断开连接
+    private static boolean mIsActiveDisconnect = true; // 是否主动断开连接
     private static final int RECONNECT_NUM = Integer.MAX_VALUE; // 重连次数
-    private int mReConnectCount = RECONNECT_NUM; // 重新连接次数
+    private static int mReConnectCount = RECONNECT_NUM; // 重新连接次数
 
-    private Timer mDisconnectTimer = new Timer();
-    private DisconnectTimerTask timerTask;
-    private long timeCountCur; // 断开时间选择
-    private long period = 1000 * 30; // 隔多少时间更新一次
-    private long lastTouchTime = System.currentTimeMillis(); // 上次接触屏幕操作的时间戳
+    private static Timer mDisconnectTimer = new Timer();
+    private static DisconnectTimerTask timerTask;
+    private static long timeCountCur; // 断开时间选择
+    private static long period = 1000 * 30; // 隔多少时间更新一次
+    private static long lastTouchTime = System.currentTimeMillis(); // 上次接触屏幕操作的时间戳
     private static final int ACCESS_FINE_LOCATION_PERMISSION_REQUEST = 100;
     private static final int REQUEST_ACTION_LOCATION_SETTINGS = 3;
-    private TextView tvAddress;
+    private static TextView tvAddress;
     public static UHFRManager mUhfrManager;//uhf
-    private boolean isSingle = false ;// single mode flag
-    private boolean isMulti = false ;
+    private static boolean isSingle = false ;// single mode flag
+    private static boolean isMulti = false ;
 
     private static final int RUNNING_DISCONNECT_TIMER = 10;
 
-    private String TAG = "UHFReadTagFragment";
+    private static String TAG = "UHFReadTagFragment";
 
-    private boolean loopFlag = false;
+    private static boolean loopFlag = false;
 
-    private ConnectStatus mConnectStatus = new ConnectStatus();
+    private static ConnectStatus mConnectStatus = new ConnectStatus();
 
     //--------------------------------------获取 解析数据-------------------------------------------------
-    final int FLAG_START = 0;//开始
-    final int FLAG_STOP = 1;//停止
-    final int FLAG_UPDATE_TIME = 2; // 更新时间
-    final int FLAG_UHFINFO = 3;
-    final int FLAG_UHFINFO_LIST = 5;
-    final int FLAG_SUCCESS = 10;//成功
-    final int FLAG_FAIL = 11;//失败
+    final static int FLAG_START = 0;//开始
+    final static int FLAG_STOP = 1;//停止
+    final static int FLAG_UPDATE_TIME = 2; // 更新时间
+    final static int FLAG_UHFINFO = 3;
+    final static int FLAG_UHFINFO_LIST = 5;
+    final static int FLAG_SUCCESS = 10;//成功
+    final static int FLAG_FAIL = 11;//失败
 
-    boolean isRuning = false;
-    private long mStrTime;
+    public static boolean isRuning = false;
+    private static long mStrTime;
 
-    private HashMap<String, String> tagMap = new HashMap<>();
-    private List<String> tempDatas = new ArrayList<>();
-    private ArrayList<HashMap<String, String>> tagList;
-    private boolean isExit = false;
-    private long total = 0;
+    private static HashMap<String, String> tagMap = new HashMap<>();
+    private static List<String> tempDatas = new ArrayList<>();
+    private static ArrayList<HashMap<String, String>> tagList;
+    private static boolean isExit = false;
+    private static long total = 0;
 
-    List<UhfTagInfoCustom> uhfTagInfoCustoms = new ArrayList<>();
+    private static List<UhfTagInfoCustom> uhfTagInfoCustoms = new ArrayList<>();
 
     //variable rfid
 
@@ -124,30 +124,30 @@ public class BaseApplication {
     public final static String ACTION_UHF_RESULT_SEND = "nlscan.intent.action.uhf.ACTION_RESULT";
     /**读码结果发送的广播Extra*/
     public final static String EXTRA_TAG_INFO = "tag_info";
-    private UHFManager mUHFMgr;
-    private HandlerThread mHandlerThread;
-    private ResultHandler mResultHandler;
+    private static UHFManager mUHFMgr;
+    private static HandlerThread mHandlerThread;
+    private static ResultHandler mResultHandler;
 
-    Map<String, TagInfo> TagsMap = new LinkedHashMap<String, TagInfo>();// 有序
-    private List<Map<String, ?>> ListMs = new ArrayList<Map<String, ?>>();
-    private String[] Coname = new String[] { "序号", "EPC ID", "次数", "天线", "协议", "RSSI", "频率", "附加数据" };//表头
+    private static Map<String, TagInfo> TagsMap = new LinkedHashMap<String, TagInfo>();// 有序
+    private static List<Map<String, ?>> ListMs = new ArrayList<Map<String, ?>>();
+    private static String[] Coname = new String[] { "序号", "EPC ID", "次数", "天线", "协议", "RSSI", "频率", "附加数据" };//表头
 
-    private Map<String, String> listHeader = new HashMap<String, String>();
+    private static Map<String, String> listHeader = new HashMap<String, String>();
 
     /*About Read EPC*/
-    private final int MSG_FIND_ASSET = 0;
-    private final int MSG_NOT_FIND_ASSET = 1;
-    private final int MSG_NOT_OPEN_COMMPORT=2;
+    private static final int MSG_FIND_ASSET = 0;
+    private static final int MSG_NOT_FIND_ASSET = 1;
+    private static final int MSG_NOT_OPEN_COMMPORT=2;
 
-    private long exittime;
+    private static long exittime;
 
-    Activity activity;
+    public static Activity activity;
 
-    void init(Activity activity){
-        this.activity = activity;
+    public static void init(Activity mactivity){
+        activity = mactivity;
     }
 
-    class BTStatus implements ConnectionStatusCallback<Object> {
+    public static class BTStatus implements ConnectionStatusCallback<Object> {
         @Override
         public void getStatus(final ConnectionStatus connectionStatus, final Object device1) {
             activity.runOnUiThread(new Runnable() {
@@ -210,13 +210,13 @@ public class BaseApplication {
         }
     }
 
-    private void startDisconnectTimer(long time) {
+    private static void startDisconnectTimer(long time) {
         timeCountCur = time;
         timerTask = new DisconnectTimerTask();
         mDisconnectTimer.schedule(timerTask, 0, period);
     }
 
-    public void cancelDisconnectTimer() {
+    public static void cancelDisconnectTimer() {
         timeCountCur = 0;
         if (timerTask != null) {
             timerTask.cancel();
@@ -224,7 +224,7 @@ public class BaseApplication {
         }
     }
 
-    private class DisconnectTimerTask extends TimerTask {
+    private static class DisconnectTimerTask extends TimerTask {
 
         @Override
         public void run() {
@@ -238,14 +238,14 @@ public class BaseApplication {
         }
     }
 
-    public void resetDisconnectTime() {
+    public static void resetDisconnectTime() {
         timeCountCur = SPUtils.getInstance(activity).getSPLong(SPUtils.DISCONNECT_TIME, 0);
         if (timeCountCur > 0) {
             formatConnectButton(timeCountCur);
         }
     }
 
-    private void formatConnectButton(long disconnectTime) {
+    private static void formatConnectButton(long disconnectTime) {
         if (uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
             if (!isScanning && System.currentTimeMillis() - lastTouchTime > 1000 * 30 && timerTask != null) {
                 long minute = disconnectTime / 1000 / 60;
@@ -262,7 +262,7 @@ public class BaseApplication {
         }
     }
 
-    public void saveConnectedDevice(String address, String name) {
+    public static void saveConnectedDevice(String address, String name) {
         List<String[]> list = FileUtils.readXmlList();
         for (int k = 0; k < list.size(); k++) {
             if (address.equals(list.get(k)[0])) {
@@ -276,21 +276,21 @@ public class BaseApplication {
     }
 
     //------------连接状态监听-----------------------
-    private List<IConnectStatus> connectStatusList = new ArrayList<>();
+    private static List<IConnectStatus> connectStatusList = new ArrayList<>();
 
-    public void addConnectStatusNotice(IConnectStatus iConnectStatus) {
+    public static void addConnectStatusNotice(IConnectStatus iConnectStatus) {
         connectStatusList.add(iConnectStatus);
     }
 
-    public void removeConnectStatusNotice(IConnectStatus iConnectStatus) {
+    public static void removeConnectStatusNotice(IConnectStatus iConnectStatus) {
         connectStatusList.remove(iConnectStatus);
     }
 
-    public interface IConnectStatus {
+    public static interface IConnectStatus {
         void getStatus(ConnectionStatus connectionStatus);
     }
 
-    public void onHidden(Boolean hidden) {
+    public static void onHidden(Boolean hidden) {
         f1hidden = hidden;
 //		Log.e("hidden", "hide"+hidden) ;
         if (hidden) {
@@ -299,10 +299,10 @@ public class BaseApplication {
         if (mUhfrManager!=null) mUhfrManager.setCancleInventoryFilter();
     }
 
-    private boolean f1hidden = false;
-    private  long startTime = 0 ;
-    private boolean keyUpFalg= true;
-    private BroadcastReceiver keyReceiver = new BroadcastReceiver() {
+    private static boolean f1hidden = false;
+    private static long startTime = 0 ;
+    private static boolean keyUpFalg= true;
+    private static BroadcastReceiver keyReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (f1hidden) return;
@@ -334,11 +334,11 @@ public class BaseApplication {
         }
     } ;
 
-    private boolean isRunning = false ;
-    private boolean isStart = false ;
-    String epc ;
+    private static boolean isRunning = false ;
+    private static boolean isStart = false ;
+    static String epc ;
     //inventory epc
-    private Runnable inventoryTask = new Runnable() {
+    private static Runnable inventoryTask = new Runnable() {
         @Override
         public void run() {
             while(isRunning){
@@ -383,8 +383,8 @@ public class BaseApplication {
             }
         }
     } ;
-    private boolean keyControl = true;
-    private void runInventory() {
+    private static boolean keyControl = true;
+    private static void runInventory() {
         if (keyControl) {
             keyControl = false;
             if (!isStart) { // not start
@@ -422,7 +422,7 @@ public class BaseApplication {
         }
     }
 
-    public void startThread() {
+    public static void startThread() {
         if (isRuning) {
             return;
         }
@@ -431,7 +431,7 @@ public class BaseApplication {
         new TagThread().start();
     }
 
-    class TagThread extends Thread {
+    public static class TagThread extends Thread {
 
         public void run() {
             EventBus.getDefault().post(new EpcEventbus("", "not-embed", FLAG_START, null));
@@ -463,7 +463,7 @@ public class BaseApplication {
         }
     }
 
-    private synchronized List<UHFTAGInfo> getUHFInfo() {
+    private static synchronized List<UHFTAGInfo> getUHFInfo() {
         List<UHFTAGInfo> list = uhf.readTagFromBufferList();
         return list;
     }
@@ -472,10 +472,10 @@ public class BaseApplication {
      * 添加EPC到列表中
      * @param uhftagInfo
      */
-    private void addEPCToList(UHFTAGInfo uhftagInfo) {
+    private static void addEPCToList(UHFTAGInfo uhftagInfo) {
         addEPCToList(uhftagInfo, true);
     }
-    private void addEPCToList(List<UHFTAGInfo> list,boolean isRepeat) {
+    private static void addEPCToList(List<UHFTAGInfo> list,boolean isRepeat) {
         boolean found = false;
 
         for(int k=0;k<list.size();k++){
@@ -485,13 +485,13 @@ public class BaseApplication {
 
         }
     }
-    private StringBuilder stringBuilder = new StringBuilder();
+    private static StringBuilder stringBuilder = new StringBuilder();
     /**
      * 添加EPC到列表中
      * @param uhftagInfo
      * @param isRepeat 是否重复添加
      */
-    private void addEPCToList(UHFTAGInfo uhftagInfo, boolean isRepeat) {
+    private static void addEPCToList(UHFTAGInfo uhftagInfo, boolean isRepeat) {
         List<UhfTagInfoCustom> uhfTagInfoCustoms = new ArrayList<>();
         boolean found = false;
 
@@ -505,7 +505,7 @@ public class BaseApplication {
      * @param epc 索引
      * @return
      */
-    public int checkIsExist(String epc) {
+    public static int checkIsExist(String epc) {
         if (TextUtils.isEmpty(epc)) {
             return -1;
         }
@@ -550,12 +550,12 @@ public class BaseApplication {
         }
     }
 
-    private Timer mTimer = new Timer();
-    private TimerTask mInventoryPerMinuteTask;
+    private static Timer mTimer = new Timer();
+    private static TimerTask mInventoryPerMinuteTask;
     //    private long period = 6 * 1000; // 每隔多少ms
-    private String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "BluetoothReader" + File.separator;
-    private String fileName;
-    private void inventoryPerMinute() {
+    private static String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "BluetoothReader" + File.separator;
+    private static String fileName;
+    private static void inventoryPerMinute() {
         cancelInventoryTask();
 //        btInventoryPerMinute.setEnabled(false);
 //        btInventory.setEnabled(false);
@@ -574,14 +574,14 @@ public class BaseApplication {
         mTimer.schedule(mInventoryPerMinuteTask, 0, period);
     }
 
-    private void cancelInventoryTask() {
+    private static void cancelInventoryTask() {
         if(mInventoryPerMinuteTask != null) {
             mInventoryPerMinuteTask.cancel();
             mInventoryPerMinuteTask = null;
         }
     }
 
-    private void inventory() {
+    private static void inventory() {
         mStrTime = System.currentTimeMillis();
         UHFTAGInfo info = uhf.inventorySingleTag();
         if (info != null) {
@@ -591,7 +591,7 @@ public class BaseApplication {
 //        handler.sendEmptyMessage(FLAG_UPDATE_TIME);
     }
 
-    private void stopInventory() {
+    private static void stopInventory() {
         loopFlag = false;
         cancelInventoryTask();
         boolean result = uhf.stopInventory();
@@ -613,7 +613,7 @@ public class BaseApplication {
     }
 
 
-    class ConnectStatus implements IConnectStatus {
+    static class ConnectStatus implements IConnectStatus {
         @Override
         public void getStatus(ConnectionStatus connectionStatus) {
             if (connectionStatus == ConnectionStatus.CONNECTED) {
@@ -651,7 +651,7 @@ public class BaseApplication {
     /**
      * Handler分发Runnable对象的方式
      */
-    private Handler mHandler = new Handler(){
+    private static Handler mHandler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
@@ -671,7 +671,7 @@ public class BaseApplication {
         }
     };
 
-    private BroadcastReceiver mResultReceiver = new BroadcastReceiver() {
+    private static BroadcastReceiver mResultReceiver = new BroadcastReceiver() {
 
         @Override
         public void onReceive(Context context, Intent intent)
@@ -700,7 +700,7 @@ public class BaseApplication {
         }//end onReceiver
     };
 
-    private class ResultHandler extends Handler
+    private static class ResultHandler extends Handler
     {
 
         public ResultHandler(Looper looper) {
@@ -734,7 +734,7 @@ public class BaseApplication {
 //    }
 
     PowerManager.WakeLock wl;
-    private void keepScreen()
+    private static void keepScreen()
     {
         Log.d("TAG", "Wake up screen.");
 
@@ -752,7 +752,7 @@ public class BaseApplication {
         activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
-    private void releseScreenLock()
+    private static void releseScreenLock()
     {
 //    	getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
 //                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
@@ -767,7 +767,7 @@ public class BaseApplication {
     }
 
 
-    private void registerResultReceiver()
+    private static void registerResultReceiver()
     {
         try {
             IntentFilter iFilter = new IntentFilter("nlscan.intent.action.uhf.ACTION_RESULT");
@@ -777,7 +777,7 @@ public class BaseApplication {
 
     }
 
-    private void unRegisterResultReceiver()
+    private static void unRegisterResultReceiver()
     {
         try {
             activity.unregisterReceiver(mResultReceiver);
@@ -789,7 +789,7 @@ public class BaseApplication {
     /**
      * 上电(连接)
      */
-    private void powerOn()
+    private static void powerOn()
     {
         UHFReader.READER_STATE er = UHFReader.READER_STATE.CMD_FAILED_ERR;
         er = mUHFMgr.powerOn();
@@ -799,7 +799,7 @@ public class BaseApplication {
     /**
      * 下电(断开)
      */
-    private void powerOff()
+    private static void powerOff()
     {
         UHFReader.READER_STATE er = UHFReader.READER_STATE.CMD_FAILED_ERR;
         er = mUHFMgr.powerOff();
@@ -809,7 +809,7 @@ public class BaseApplication {
     /**
      * 开始扫描
      */
-    private void startReading()
+    private static void startReading()
     {
         UHFReader.READER_STATE er = UHFReader.READER_STATE.CMD_FAILED_ERR;
         er= mUHFMgr.startTagInventory();
@@ -822,7 +822,7 @@ public class BaseApplication {
     /**
      * 停止扫描
      */
-    private UHFReader.READER_STATE stopReading()
+    private static UHFReader.READER_STATE stopReading()
     {
         UHFReader.READER_STATE er = UHFReader.READER_STATE.CMD_FAILED_ERR;
         er = mUHFMgr.stopTagInventory();
@@ -831,7 +831,7 @@ public class BaseApplication {
         //Toast.makeText(activity, "Stop reading :"+er.toString(), Toast.LENGTH_SHORT).show();
     }
 
-    public void connect(String deviceAddress) {
+    public static void connect(String deviceAddress) {
         if (uhf.getConnectStatus() == ConnectionStatus.CONNECTING) {
             showToast(activity.getResources().getString(R.string.connecting));
         } else {
@@ -839,13 +839,13 @@ public class BaseApplication {
         }
     }
 
-    public void disconnect(boolean isActiveDisconnect) {
+    public static void disconnect(boolean isActiveDisconnect) {
         cancelDisconnectTimer();
         mIsActiveDisconnect = isActiveDisconnect; // 主动断开为true
         uhf.disconnect();
     }
 
-    private void reConnect(String deviceAddress) {
+    private static void reConnect(String deviceAddress) {
         if (!mIsActiveDisconnect && mReConnectCount > 0) {
             connect(deviceAddress);
             mReConnectCount--;
@@ -857,13 +857,11 @@ public class BaseApplication {
      *
      * @return
      */
-    private boolean shouldShowDisconnected() {
+    private static boolean shouldShowDisconnected() {
         return mIsActiveDisconnect || mReConnectCount == 0;
     }
 
-
-
-    public void showToast(String text) {
+    public static void showToast(String text) {
         if (toast != null) {
             toast.cancel();
         }
