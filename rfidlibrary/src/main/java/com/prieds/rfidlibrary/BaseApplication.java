@@ -31,10 +31,17 @@ import android.widget.Toast;
 
 import com.BRMicro.Tools;
 import com.handheld.uhfr.UHFRManager;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.MultiplePermissionsReport;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 import com.nlscan.android.uhf.TagInfo;
 import com.nlscan.android.uhf.UHFManager;
 import com.nlscan.android.uhf.UHFReader;
+import com.pixplicity.easyprefs.library.Prefs;
 import com.prieds.rfidlibrary.bluetooth.DateUtils;
+import com.prieds.rfidlibrary.bluetooth.DeviceListActivity;
 import com.prieds.rfidlibrary.bluetooth.FileUtils;
 import com.prieds.rfidlibrary.bluetooth.SPUtils;
 import com.prieds.rfidlibrary.model.EpcEventbus;
@@ -58,8 +65,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public final class BaseApplication {
-    private static final int REQUEST_ENABLE_BT = 2;
-    private static final int REQUEST_SELECT_DEVICE = 1;
+    public static final int REQUEST_ENABLE_BT = 2;
+    public static final int REQUEST_SELECT_DEVICE = 1;
 
     public static BluetoothDevice mDevice = null;
 
@@ -159,6 +166,50 @@ public final class BaseApplication {
         checkLocationEnable();
         Utils.initSound(mactivity);
 
+    }
+
+    public static void requestBlePermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            Dexter.withContext(activity)
+                    .withPermissions(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+                    .withListener(new MultiplePermissionsListener() {
+                        @Override public void onPermissionsChecked(MultiplePermissionsReport report) {
+                            if (report.areAllPermissionsGranted()){
+                                searchBluetoothDevice();
+                            }
+                        }
+                        @Override public void onPermissionRationaleShouldBeShown(List<PermissionRequest> permissions, PermissionToken token) {/* ... */}
+                    }).check();
+        } else {
+            searchBluetoothDevice();
+        }
+    }
+
+    static void searchBluetoothDevice() {
+        if (isScanning) {
+            showToast(activity.getResources().getString(R.string.title_stop_read_card));
+        } else if (uhf.getConnectStatus() == ConnectionStatus.CONNECTING) {
+            showToast(activity.getResources().getString(R.string.connecting));
+        } else {
+            showBluetoothDevice(false);
+        }
+    }
+
+    private static void showBluetoothDevice(boolean isHistory) {
+        if (mBtAdapter == null) {
+            showToast("Bluetooth is not available");
+            return;
+        }
+        if (!mBtAdapter.isEnabled()) {
+            Log.i("TAG", "onClick - BT not enabled yet");
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            activity.startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+        } else {
+            Intent newIntent = new Intent(activity, DeviceListActivity.class);
+            newIntent.putExtra(SHOW_HISTORY_CONNECTED_LIST, isHistory);
+            activity.startActivityForResult(newIntent, REQUEST_SELECT_DEVICE);
+            cancelDisconnectTimer();
+        }
     }
 
     private static void initRfid() {
