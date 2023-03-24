@@ -54,6 +54,8 @@ import com.rscja.deviceapi.interfaces.ConnectionStatusCallback;
 import com.uhf.api.cls.Reader;
 
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -155,6 +157,57 @@ public final class BaseApplication {
     private static long exittime;
 
     public static Activity activity;
+    public static OnScannedListener mCallback;
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(EpcEventbus data) {
+        if (data.getType().equalsIgnoreCase("embed")){
+            if (data.getEpc() == null || data.getEpc().length() == 0) {
+                return ;
+            }
+
+            mCallback.onDateSet(activity, data.getEpc(), data.getType());
+
+        }else{
+            switch (data.getFlag()) {
+                case FLAG_STOP:
+                case FLAG_START:
+                    if (data.getFlag() == FLAG_SUCCESS) {
+                        //停止成功
+//                        btClear.setEnabled(true);
+//                        btStop.setEnabled(false);
+//                        InventoryLoop.setEnabled(true);
+//                        btInventory.setEnabled(true);
+//                        btInventoryPerMinute.setEnabled(true);
+                    } else {
+                        //停止失败
+                        Utils.playSound(2);
+//                        Toast.makeText(this, R.string.uhf_msg_inventory_stop_fail, Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+                case FLAG_UHFINFO_LIST:
+                    List<UHFTAGInfo> list = ( List<UHFTAGInfo>) data.getObj();
+                    addEPCToList(list,true);
+                    break;
+                //开始读取标签成功
+                //                        btClear.setEnabled(false);
+                //                        btStop.setEnabled(true);
+                //                        InventoryLoop.setEnabled(false);
+                //                        btInventory.setEnabled(false);
+                //                        btInventoryPerMinute.setEnabled(false);
+                //开始读取标签失败
+                case FLAG_UPDATE_TIME:
+                    float useTime = (System.currentTimeMillis() - mStrTime) / 1000.0F;
+//                    tv_time.setText(NumberTool.getPointDouble(loopFlag ? 1 : 3, useTime) + "s");
+                    break;
+                case FLAG_UHFINFO:
+                    UHFTAGInfo info = (UHFTAGInfo) data.getObj();
+                    addEPCToList(info);
+//                    addEPCToList(info, false);
+                    break;
+            }
+        }
+    }
 
     public static void init(Activity mactivity){
         activity = mactivity;
@@ -166,6 +219,14 @@ public final class BaseApplication {
         checkLocationEnable();
         Utils.initSound(mactivity);
 
+    }
+
+    public interface OnScannedListener {
+        void onDateSet(Activity view, String epc, String type);
+    }
+
+    public void setOnScannedListener(OnScannedListener listener) {
+        mCallback = listener;
     }
 
     public static void requestBlePermissions() {
@@ -597,7 +658,7 @@ public final class BaseApplication {
         for(int k=0;k<list.size();k++){
             UHFTAGInfo uhftagInfo=list.get(k);
 
-            showToast(uhftagInfo.getEPC());
+            mCallback.onDateSet(activity, uhftagInfo.getEPC(), "not-embed");
 
         }
     }
@@ -611,7 +672,7 @@ public final class BaseApplication {
         List<UhfTagInfoCustom> uhfTagInfoCustoms = new ArrayList<>();
         boolean found = false;
 
-        showToast(uhftagInfo.getEPC());
+        mCallback.onDateSet(activity, uhftagInfo.getEPC(), "not-embed");
 
     }
 
@@ -774,7 +835,7 @@ public final class BaseApplication {
             switch (msg.what) {
                 case MSG_FIND_ASSET:
                     Bundle bundle = msg.getData();
-                    showToast(bundle.getString("rfid"));
+                    mCallback.onDateSet(activity, bundle.getString("rfid"), "embed-new");
 //                    getNewData(bundle.getString("rfid"));
                     break;
                 case MSG_NOT_FIND_ASSET:
@@ -983,5 +1044,16 @@ public final class BaseApplication {
         }
         toast = Toast.makeText(activity, text, Toast.LENGTH_SHORT);
         toast.show();
+    }
+
+    public static void connectAfterSuccessBt(Intent data){
+        if (uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
+            disconnect(true);
+        }
+        String deviceAddress = data.getStringExtra(BluetoothDevice.EXTRA_DEVICE);
+        Prefs.putString("BLUETOOTH_ADDRESS", deviceAddress);
+        mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(deviceAddress);
+//                    binding.tvAddress.setText(String.format("%s(%s)\nconnecting", mDevice.getName(), deviceAddress));
+        connect(deviceAddress);
     }
 }
