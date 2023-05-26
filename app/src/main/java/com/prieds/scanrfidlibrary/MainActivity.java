@@ -2,9 +2,11 @@ package com.prieds.scanrfidlibrary;
 
 import static com.prieds.rfidlibrary.BaseApplication.REQUEST_ENABLE_BT;
 import static com.prieds.rfidlibrary.BaseApplication.REQUEST_SELECT_DEVICE;
+import static com.prieds.rfidlibrary.BaseApplication.setOnScannedListener;
 import static com.prieds.rfidlibrary.BaseApplication.showToast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -15,15 +17,19 @@ import android.widget.Button;
 
 import com.prieds.rfidlibrary.BaseApplication;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements BaseApplication.OnScannedListener {
     Button btnClickBt;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+
         btnClickBt = findViewById(R.id.btnClickBt);
         BaseApplication.init(this);
+        setOnScannedListener(this::onScannedSet);
 
         btnClickBt.setOnClickListener(v->{
             BaseApplication.requestBlePermissions();
@@ -51,5 +57,10 @@ public class MainActivity extends AppCompatActivity {
             default:
                 break;
         }
+    }
+
+    @Override
+    public void onScannedSet(Activity view, String epc, String type) {
+        showToast(epc + " " + type);
     }
 }

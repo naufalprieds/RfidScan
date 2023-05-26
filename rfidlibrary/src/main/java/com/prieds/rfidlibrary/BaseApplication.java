@@ -166,7 +166,7 @@ public final class BaseApplication {
                 return ;
             }
 
-            mCallback.onDateSet(activity, data.getEpc(), data.getType());
+            mCallback.onScannedSet(activity, data.getEpc(), data.getType());
 
         }else{
             switch (data.getFlag()) {
@@ -209,6 +209,10 @@ public final class BaseApplication {
         }
     }
 
+    public BaseApplication() {
+        EventBus.getDefault().register(this);
+    }
+
     public static void init(Activity mactivity){
         activity = mactivity;
         if (uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
@@ -218,14 +222,13 @@ public final class BaseApplication {
         initRfid();
         checkLocationEnable();
         Utils.initSound(mactivity);
-
     }
 
     public interface OnScannedListener {
-        void onDateSet(Activity view, String epc, String type);
+        void onScannedSet(Activity view, String epc, String type);
     }
 
-    public void setOnScannedListener(OnScannedListener listener) {
+    public static void setOnScannedListener(OnScannedListener listener) {
         mCallback = listener;
     }
 
@@ -658,7 +661,7 @@ public final class BaseApplication {
         for(int k=0;k<list.size();k++){
             UHFTAGInfo uhftagInfo=list.get(k);
 
-            mCallback.onDateSet(activity, uhftagInfo.getEPC(), "not-embed");
+            mCallback.onScannedSet(activity, uhftagInfo.getEPC(), "not-embed");
 
         }
     }
@@ -672,7 +675,7 @@ public final class BaseApplication {
         List<UhfTagInfoCustom> uhfTagInfoCustoms = new ArrayList<>();
         boolean found = false;
 
-        mCallback.onDateSet(activity, uhftagInfo.getEPC(), "not-embed");
+        mCallback.onScannedSet(activity, uhftagInfo.getEPC(), "not-embed");
 
     }
 
@@ -835,7 +838,7 @@ public final class BaseApplication {
             switch (msg.what) {
                 case MSG_FIND_ASSET:
                     Bundle bundle = msg.getData();
-                    mCallback.onDateSet(activity, bundle.getString("rfid"), "embed-new");
+                    mCallback.onScannedSet(activity, bundle.getString("rfid"), "embed-new");
 //                    getNewData(bundle.getString("rfid"));
                     break;
                 case MSG_NOT_FIND_ASSET:
